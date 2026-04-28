@@ -1,0 +1,57 @@
+# Cross-Subject LOSO Configuration
+network: SETransNet
+network_args:
+  num_classes: 4
+  num_samples: 800
+  num_channels: 62
+  embed_dim: 80
+  temporal_kernels: [25, 51, 101, 201, 401]
+  pool_size: 40
+  pool_stride: 10
+  num_heads: 8
+  fc_ratio: 4
+  depth: 6
+  attn_drop: 0.1
+  fc_drop: 0.5
+  spatial_drop: 0.25
+
+# Training
+batch_size: 128
+epochs: 200
+lr: 0.001
+weight_decay: 0.0001
+early_stop_patience: 40
+
+# Data
+data_path: ./data/seed4_preprocessed
+out_folder: ./output/CS
+
+# Protocol
+sessions_to_use: [1, 2, 3]
+use_euclidean_align: true
+val_split: 0.15
+
+# Loss
+use_emotion_dl: true
+emotion_dl_epsilon: 0.2
+use_weighted_loss: true
+
+# Domain Adaptation
+dann_weight: 0.1
+mmd_weight: 0.1
+num_domains: 14             # one per source subject (LOSO)
+
+# Augmentation
+num_classes: 4
+num_segs: 8
+use_lr_swap: true
+use_gaussian_noise: true
+noise_sigma_ratio: 0.01
+noise_prob: 0.3
+lr_swap_prob: 0.5
+
+# System
+preferred_device: gpu
+nGPU: 0
+random_seed: 42
+num_workers: 2

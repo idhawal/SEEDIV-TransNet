@@ -1,0 +1,52 @@
+# Model
+network: SETransNet
+network_args:
+  num_classes: 4
+  num_samples: 800          # 4s × 200Hz
+  num_channels: 62          # SEED-IV 62-channel ESI NeuroScan
+  embed_dim: 80             # 5 branches × F1=16
+  temporal_kernels: [25, 51, 101, 201, 401]  # 125/255/505/1005/2005ms @200Hz
+  pool_size: 40             # 200ms window @200Hz
+  pool_stride: 10           # 50ms hop @200Hz → T_seq=77
+  num_heads: 8              # 80/8=10 per head
+  fc_ratio: 4               # FFN hidden = 80×4=320
+  depth: 6                  # 6 transformer layers
+  attn_drop: 0.1            # attention dropout
+  fc_drop: 0.5              # FC head dropout
+  spatial_drop: 0.25        # after spatial conv
+
+# Training
+batch_size: 32              # ~300 train samples per subject
+epochs: 200
+lr: 0.001                   # 1e-3
+weight_decay: 0.0001        # 1e-4
+early_stop_patience: 30
+
+# Data
+data_path: ./data/seed4_preprocessed
+out_folder: ./output/SD
+
+# Protocol
+sd_train_sessions: [1, 2]
+sd_test_sessions: [3]
+val_split: 0.15             # from training sessions only
+
+# Loss
+use_emotion_dl: true
+emotion_dl_epsilon: 0.2
+use_weighted_loss: true
+
+# Augmentation
+num_classes: 4
+num_segs: 8
+use_lr_swap: true
+use_gaussian_noise: true
+noise_sigma_ratio: 0.01
+noise_prob: 0.3
+lr_swap_prob: 0.5
+
+# System
+preferred_device: gpu
+nGPU: 0
+random_seed: 42
+num_workers: 2

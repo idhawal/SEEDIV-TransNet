@@ -1,0 +1,541 @@
+@page { size: 8.5in 11in; margin-left: 0.87in; margin-right: 0.42in; margin-top: 0.48in; margin-bottom: 0.4in }
+		p { line-height: 115%; text-align: left; orphans: 2; widows: 2; margin-bottom: 0.1in; direction: ltr; background: transparent }
+		a:link { color: #000080; text-decoration: underline } 1 EEG-Based
+Emotion Recognition Using Regularized
+Graph Neural Networks Peixiang
+Zhong, Di Wang, Senior
+Member, IEEE, and
+Chunyan Miao, Senior
+Member, IEEE Abstract —Electroencephalography
+		(EEG) measures the neuronal activities in different brain regions
+		via electrodes. Many existing studies on EEG-based emotion
+		recognition do not fully exploit the topology of EEG channels. In
+		this paper, we propose a regularized graph
+		neural network (RGNN) for EEG-based emotion recognition. RGNN
+		considers the biological topology among different brain regions
+		to capture both local and global relations among different EEG
+		channels. Specifically, we model the inter-channel relations in EEG
+		signals via an adjacency matrix in a graph neural network where the
+		connection and sparseness of the adjacency matrix are inspired
+		by neuroscience theories of human brain organization. In addition,
+		we propose two regularizers, namely node-wise domain adversarial
+		training (NodeDAT) and emotion-aware distribution learning
+		(EmotionDL), to better handle cross-subject EEG variations and
+		noisy labels, respectively. Extensive experiments on two public
+		datasets, SEED and SEED-IV, demonstrate the superior performance of
+		our model than state-of-the-art models in most experimental
+		settings. Moreover, ablation studies show that the proposed
+		adjacency matrix and two regularizers contribute consistent and
+		significant gain to the performance of our RGNN model. Finally,
+		investigations on the neuronal activities reveal important brain
+		regions and inter-channel relations for EEG-based emotion
+		recognition. arXiv:1907.07835v4
+		[cs.CV] 13 May 2020 Index
+		Terms —Affective
+		Computing, EEG, Graph Neural Network, SEED + 1
+	I NTRODUCTION E MOTION recognition
+	focuses on the recognition of hu­ man
+	emotions based on a variety of modalities, such as
+	audio-visual expressions, body language, physiological signals,
+	etc. Compared to other modalities, physiological signals,
+	such as electroencephalography (EEG), electrocar­ diogram
+	(ECG), electromyography (EMG), etc., have the advantage
+	of being difficult to hide or disguise. In recent years, due to the
+	rapid development of noninvasive, easy­ to-use
+	and inexpensive EEG recording devices, EEG-based emotion recognition
+	has received an increasing amount of attention
+	in both research [1] and applications [2]. Emotion
+	models can be broadly categorized into discrete models
+	and dimensional models. The former categorizes emotions
+	into discrete entities, e.g., anger, disgust, fear, happiness,
+	sadness, and surprise in Ekman’s theory [3]. The
+	latter describes emotions using their underlying di­ mensions,
+	e.g., valence, arousal and dominance [4], which measures
+	emotions from unpleasant to pleasant, passive to active,
+	and submissive to dominant, respectively. EEG
+	signals measure voltage fluctuations from the cortex in
+	the brain and have been shown to reveal important information
+	about human emotional states [5]. For example, greater
+	relative left frontal EEG activity has been observed when
+	experiencing positive emotions [5]. The voltage fluctu­ations in
+	different brain regions are measured by electrodes attached
+	to the scalp. Each electrode collects EEG signals in one
+	channel. The collected EEG signals are often analyzed • P.
+	Zhong, D. Wang and C. Miao are with the Joint NTU-UBC Research Centre
+	of Excellence in Active Living for the Elderly (LILY), Nanyang Technological
+	University, Singapore. P.
+	Zhong and C. Miao are also with the Alibaba-NTU Singapore Joint Research
+	Institute and the School of Computer Science and Engineering, Nanyang
+	Technological University, Singapore. E-mail:
+	peixiang001@e.ntu.edu.sg, { wangdi,
+	ascymiao } @ ntu.edu.sg in
+	specific frequency bands, namely delta (1-4 Hz), theta (4-7 Hz),
+	alpha (8-13 Hz), beta (13-30 Hz), and gamma (>30 Hz). Many
+	existing EEG-based emotion recognition methods are
+	primarily based on the supervised machine learning approach,
+	wherein features are often extracted from prepro­ cessed
+	EEG signals in each channel over a time window. Then,
+	a classifier is trained on the extracted features to recognize
+	emotions. Wang et
+	al. [6]
+	compared power spec­ tral
+	density features (PSD), wavelet features and nonlinear dynamical
+	features with a Support Vector Machine (SVM) classifier. Zheng and
+	Lu [7] investigated critical frequency bands
+	and channels using PSD, differential entropy (DE) [8] and PSD
+	asymmetry features, and obtained robust accuracy using
+	deep belief networks (DBN). However, most existing EEG-based
+	emotion recognition approaches do not address the following three
+	challenges: 1) the topological structure of
+	EEG channels are not effectively exploited to learn more discriminative
+	EEG representations; 2) EEG signals vary sig­ nificantly
+	across different subjects, which hinders the gener­ alizability
+	of the trained classifiers in subject-independent classification
+	settings; and 3) participants may not always generate
+	the intended emotions when watching emotion-eliciting stimuli.
+	Consequently, the emotion labels in the collected
+	EEG data may be noisy and inconsistent with the actual
+	elicited emotions. There
+	have been several attempts to address the first challenge.
+	Zhang et
+	al. [9]
+	and Zhang et
+	al. [10]
+	incorpo­ rated
+	spatial relations in EEG signals using convolutional neural
+	networks (CNN) and recurrent neural networks (RNN),
+	respectively. However, their approaches require a 2D
+	representation of EEG channels on the scalp, which may cause
+	information loss during flattening because channels are actually
+	arranged in the 3D space. In addition, their approach
+	of using CNNs and RNNs to capture inter-channel 2 relations
+	has difficulty in learning long-range dependencies [11]. Graph
+	neural networks (GNN) has been applied in [12] to
+	capture inter-channel relations using an adjacency matrix. However,
+	similar to CNNs and RNNs, the GNN approach [12]
+	only considers relations between the nearest channels, which
+	thus may lose valuable information between distant channels,
+	such as the PSD asymmetry between channels on the
+	left and right hemispheres in the frontal region, which has
+	been shown to be informative in valence prediction [5]. In
+	recent years, several studies [13], [14] attempted to tackle
+	the second challenge by investigating the transfer­ ability
+	of EEG-based emotion recognition models across subjects.
+	Lan et
+	al. [15]
+	compared several domain adapta­ tion
+	techniques such as maximum independence domain adaptation
+	(MIDA), transfer component analysis (TCA), subspace
+	alignment (SA), etc. They found that the subject- independent
+	classification accuracy can be improved by around
+	10%. Li et
+	al. [16]
+	applied domain adversarial train­ ing
+	to lower the influence of individual subject on EEG data and
+	obtained improved performance as well. However, their adversarial
+	training does not exploit any graph structure of
+	the EEG signals and only leads to small performance improvement
+	in our experiment (see Section 7.1). To
+	the best of our knowledge, no attempt has been made to address the
+	third challenge, i.e., noisy emotion labels, in EEG-based
+	emotion recognition. In
+	this paper, we propose a regularized graph neural network
+	(RGNN) aiming to address all the three aforemen­ tioned
+	challenges. Graph analysis for human brain has been studied
+	extensively in the neuroscience literature [17], [18]. However,
+	making an accurate connectome is still an open question
+	and subject to different scales [18]. Inspired by [12], [19],
+	we consider each EEG channel as a node in our graph. Our
+	RGNN model extends the simple graph convolution network
+	(SGC) [20] and leverages the topological structure of
+	EEG channels. Specifically, we propose a sparse adjacency matrix
+	to capture both local and global inter-channel rela­ tions
+	based on the biological topology of human brain [19]. Local
+	inter-channel relations connect nearby groups of neu­rons and
+	may reveal anatomical connectivity at macroscale [18],
+	[21]. Global inter-channel relations connect distant groups of
+	neurons between the left and right hemispheres and
+	may reveal emotion-related functional connectivity [5], [16]. In
+	addition, we propose a node-wise domain adversar­ ial
+	training (NodeDAT) method to regularize RGNN for better
+	generalization in subject-independent classification scenarios.
+	Different from the domain adversarial training in [16],
+	[22], our NodeDAT method provides a finer-grained regularization by
+	minimizing the domain discrepancies be­ tween
+	features in the source and target domains for each channel/node.
+	Moreover, we propose an emotion-aware distribution
+	learning (EmotionDL) method to address the problem
+	of noisy labels in the datasets. Prior studies have shown
+	that noisy labels can adversely impact classification accuracy
+	[23]. Instead of learning the traditional single-label classification,
+	our EmotionDL method learns a distribution of
+	labels of the training data and thus acts as a regularizer to
+	improve the robustness of our model against noisy labels. Finally,
+	we conduct extensive experiments to validate the effectiveness
+	of our RGNN model and investigate emotion- related
+	informative neuronal activities. In
+	summary, the main contributions of this paper are as follows: We
+		propose a regularized graph neural network (RGNN)
+		model to recognize emotions based on EEG signals.
+		Our biologically inspired model captures both
+		local and global inter-channel relations. We
+		propose two regularizers: node-wise domain adversarial
+		training (NodeDAT) and emotion-aware distribution
+		learning (EmotionDL), to improve the robustness
+		of our model against cross-subject varia­ tions
+		and noisy labels, respectively. We
+		conduct extensive experiments in both subject- dependent
+		and subject-independent classification settings
+		on two public EEG datasets, namely SEED [7]
+		and SEED-IV [24]. Experimental results demon­ strate
+		the effectiveness of our proposed model and regularizers. In
+		addition, our RGNN model achieves superior
+		performance over the state-of-the-art mod­ els
+		in most experimental settings. We
+		investigate the emotional neuronal activities and
+		the results reveal that pre-frontal, parietal and occipital
+		regions may be the most informative re­gions for emotion
+		recognition. In addition, global inter-channel
+		relations between the left and right hemispheres
+		are important, and local inter-channel relations
+		between (FP1, AF3), (F6, F8) and (FP2, AF4) may also provide useful
+		information. 2
+	R ELATED W ORK In
+	this section, we review related work in the fields of EEG-based
+	emotion recognition, graph neural network, unsuper­ vised
+	domain adaptation, and learning with noisy labels. 2.1
+	EEG-Based Emotion Recognition EEG
+	feature extractors and classifiers are the two fundamen­ tal
+	components in the machine learning approach of EEG- based
+	emotion recognition. EEG features can be broadly divided
+	into single-channel features and multi-channel ones [25].
+	The majority of existing features are computed on a
+	single channel, e.g., statistical features [26], PSD [27], differential
+	entropy (DE) [8], and wavelet features [28]. A few number of
+	features are computed on multiple channels to
+	capture the inter-channel relations, e.g., the asymmetry of PSD
+	between two hemispheres [7] and functional connec­ tivity
+	[29], [30], where common indices such as correlation, coherence
+	and phase synchronization were used estimate brain
+	functional connectivity between channels. Another line
+	of research in multi-channel features is to use common spatial
+	filters [31] and spatial-temporal filters [32], [33] to extract
+	class-discriminative EEG features. In contrast, our model
+	is deigned to operate on single-channel features and learn
+	to effectively combine them using a graph neural network. EEG
+	classifiers can be broadly divided into topology- invariant
+	classifiers and topology-aware ones. The majority of
+	existing classifiers are topology-invariant classifiers such as
+	SVM, k-Nearest Neighbors (KNN), DBN [34] and RNN 3 [35],
+	which do not take the topological structure of EEG fea­ tures
+	into account when learning the EEG representations. In
+	contrast, topology-aware classifiers such as CNN [9], [36], [37]
+	and GNN [12] consider the inter-channel topological relations
+	and learn EEG representations for each channel by
+	aggregating features from nearby channels using convo­ lutional
+	operations either in the Euclidean space or in the non-Euclidean
+	space. However, as discussed in Section 1, existing
+	CNNs and GNNs have difficulty in learning the dependencies
+	between distant channels, which may reveal important
+	emotion-related information. Recently, Zhang et al. [10]
+	and Li et
+	al. [38]
+	proposed to use RNNs to learn spatial
+	topological relations between channels by scanning electrodes
+	in both vertical and horizontal directions. How­ ever,
+	their approaches do not fully exploit the topological structure
+	of EEG channels. For example, two topologically close channels may
+	be far away from each other in their scanning
+	sequence. In contrast, our model is able to learn relations between
+	distant channels using global connections. 2.2
+	Graph Neural Network Graph
+	neural network (GNN) is a type of neural network dealing
+	with data in the graph domain, e.g., molecular struc­tures,
+	social networks and knowledge graphs [39]. One early work
+	on GNN [40] aimed to learn a converged static state embedding
+	for each node in the graph using a transition function
+	applied to its neighborhood. Later, inspired by the convolutional
+	operation of CNN in the Euclidean domain, Bruna et
+	al. [41]
+	combined spectral graph theory [42] with neural
+	network and defined convolutional operations in the graph
+	domain using the spectral filters computed from the normalized
+	graph Laplacian. Following this line of research, Defferrard et
+	al. [43]
+	proposed fast localized convolutions by
+	using a recursive formulation of the K-order Cheby­ shev
+	polynomials to approximate the filters. The resulting representation
+	for each node is an aggregation of its K th ­ order
+	neighborhood. Kipf and Welling [44] further limited K =
+	1 and
+	proposed the standard graph convolutional network
+	(GCN) with a faster localized graph convolutional operation.
+	The convolutional layers in GCN can be stacked K
+	times to effectively convolve the K th -order
+	neighborhood of
+	a node. Recently, Wu et
+	al. [20]
+	simplified GCN by removing
+	the nonlinearities between convolutional layers in GCN and proposed
+	the simple graph convolution net­ work
+	(SGC), which effectively behaves like a linear feature transformation
+	followed by a logistic regression. Apart from the
+	convolution operation used in GCNs, there are other types
+	of operations used in GNNs, such as attention [45]. However,
+	they are often trained significantly slower than SGC
+	[20]. In this paper, we extend SGC to model EEG signals
+	because it performs orders of magnitude faster than other
+	networks with comparable classification accuracy. 2.3
+	Unsupervised Domain Adaptation Unsupervised
+	domain adaptation aims to mitigate the do­ main
+	shift in knowledge transfer from a supervised source domain
+	to an unsupervised target domain. The most com­ mon
+	approaches are instance re-weighting and domain- invariant
+	feature learning. Instance re-weighting methods [46] aim to infer
+	the resampling weight directly by feature distribution
+	matching across source and target domains in a
+	non-parametric manner. Domain-invariant feature leaning methods
+	align features from both source and target domains to
+	a common feature space. The alignment can be achieved by
+	minimizing divergence [47], maximizing reconstruction [48],
+	or adversarial training [22]. Our proposed NodeDAT regularizer
+	extends the domain adversarial training [22] to graph neural
+	networks and achieves finer-grained regular­ ization
+	by minimizing the discrepancies between features in source
+	and target domains for each node individually. 2.4
+	Learning with Noisy Labels Commonly
+	adopted approaches to learning with noisy la­ bels
+	are based on the noise transition matrix and robust loss
+	functions. The noise transition matrix specifies the probabilities
+	of transition from each ground truth label to each
+	noisy label and is often applied to modify the cross- entropy
+	loss. The matrix can be pre-computed as a
+	prior [49] or
+	estimated from noisy data [50]. A few studies tackle noisy labels
+	by using noise-tolerant robust loss functions, such as
+	unhinged loss [51] and ramp loss [52]. Our proposed EmotionDL
+	regularizer is inspired by [53], which applies distribution
+	learning to classify ambiguous images. 3
+	P RELIMINARIES In
+	this section, we introduce the preliminaries of the simple graph
+	convolution network (SGC) [20] and spectral graph convolution,
+	which are the basis of our RGNN model. 3.1
+	Simple Graph Convolution Network (SGC) Given
+	a graph G =
+	( V , E ) ,
+	where V denotes
+	a set of nodes and E denotes
+	a set of edges between nodes in V .
+	Data on V can
+	be represented by a feature matrix X ∈ R n X d ,
+	where n = |V| and
+	d denotes the input feature dimension. The edge
+	set E can
+	be represented by a weighted adjacency ma­ trix A ∈ R n X n with self-loops, i.e., A ii =
+	1 ,
+	i =
+	1 , 2 ,...,
+	n. In
+	general, GNNs learn a feature transformation function for X and
+	produces output Z ∈ R n X d ' ,
+	where d ' denotes the
+	output feature dimension. Between
+	adjacent layers in GNNs, the feature transfor­mation can be
+	written as H l +1 = f (H l , A) , (1) where
+	l =
+	0 , 1 ,
+	..., L − 1 ,
+	L denotes the number of layers, H 0 =
+	X , H L = Z ,
+	and f denotes the function we want to learn.
+	A simple definition of f would be H l +1 = a (AH l W l ) , (2) where
+	a denotes a non-linear function and W l denotes a weight
+	matrix at layer l. For each node x ,
+	function f simply computes
+	the weighted sum of all the node features in its neighborhood
+	including x itself,
+	followed by a non-linear transformation.
+	However, one major limitation of the f in (2)
+	is that repeatedly applying f along multiple layers may lead
+	to H l with overly large values due to summation. Kipf and
+	Welling [44] alleviated this limitation by proposing the graph
+	convolution network (GCN) as follows H l +1 = a (D _ 1 2 AD _ 1 2 H l W l ) , (3) 4 where D denotes the diagonal degree matrix of A , i.e., D ii =
+	> j A ij .
+	The normalized adjacency matrix D − 2 1 AD − 2 prevents H from growing overly large. If we ignore
+	σ and W l temporarily and expand (3), the hidden state H l +1 i for
+	node x i ,
+	i = 1 , 2 ,..., n, can be computed via n H l +1 i ← A ii A ij D ( D ii +
+		1)(D jj +
+		1) j =1 Note
+		that each neighboring H l j is now normalized by the degrees
+		of both x i and x j .
+		Successively applying L layers aggregates
+		node features within a neighborhood of size L. To
+		further accelerate training while keeping comparable performance,
+		Wu et al. [20] proposed SGC by removing the
+		non-linear function σ in (3) and reparameterizing all linear
+		transformations W l across all layers into one linear transformation W as follows H l + H l .
+	(4) ii +
+	1 i / Z
+	= H L = SH L− 1 W L− 1 = ... =
+	S L XW , (5) where S = D − 2 AD − 1 2 and W = W 0 W 1 ... W L− 1 .
+	Essen- 1 tially,
+	SGC computes a topology-aware linear transforma­ tion Xˆ = S L X , followed by a final linear transformation Z
+	= ˆ XW . 3.2
+	Spectral Graph Convolution We
+	analyze GCN from the perspective of spectral graph theory
+	[42]. Graph Fourier analysis relies on the graph Laplacian L = D − A or the normalized graph Laplacian Lˆ
+	= I − D − 1 2 AD − 1 2 .
+	Since L ˆ is a symmetric positive semidefinite
+	matrix, it can be decomposed as Lˆ = UΛU T , where U is the orthonormal eigenvector matrix of L ˆ and Λ
+	= diag ( λ 1 ,
+	..., λ N ) is the diagonal matrix of correspond­ ing
+	eigenvalues. Given graph data X , the graph Fourier transform
+	of X is Xˆ = U T X , and the inverse Fourier transform
+	of X ˆ is X = U ˆ X . Hence, the graph convolution between X and a filter G is computed as follows X ∗ G = U((U T G) ® (U T X))
+	= U ˆ GU T X , (6) where 0 denotes element-wise multiplication and G ˆ = diag (
+	ˆ g 1 ,
+	..., ˆ g n ) denotes a diagonal matrix with n spectral filter
+	coefficients. To
+	reduce the current learning complexity of O ( n ) to that of
+	conventional CNN, i.e., O ( K ) , (6) can be approximated using
+	the Kth order polynomials as follows U ˆ GU T X ≈ U( ~ K θ i Λ i )U T X
+	= ~ K θ i ˆ L i X , (7) i =0 i =0 where
+	θ i denotes learnable parameters. To further reduce computational
+	cost, Defferrard et al. [43] proposed to use Chebyshev
+	polynomials to approximate the filtering opera­ tion
+	as follows U ˆ GU T X
+	= ~ K θ i T i ( ˆ L ~ )X , (8) i =0 where ˆL 0 = Lˆ − I denotes the scaled normalized 2 λ max Laplacian
+	with its eigenvalues lying within [ − 1 , 1] , λ max denotes
+	the maximum eigenvalue of ˆ L , and T i ( x ) denotes the
+	Chebyshev polynomials recursively defined as T i ( x )
+	= 2 xT i − 1 ( x ) − T i − 2 ( x ) with T 0 ( x )
+	= 1 and T 1 ( x )
+	= x. The
+	GCN proposed in [44] made a few approximations to
+	simplify the filtering operation in (8): 1) use K = 1 ;
+	2) set λ max = 2 ;
+	and 3) set θ 1 = − θ 0 .
+	The resulted GCN arrives at (3).
+	Essentially, the graph convolutional operations defined in
+	(3) and (5) behave like a low-pass filter by smoothing the features
+	of each node on the graph using node features in its
+	neighborhood. 4
+	R EGULARIZED G RAPH N EURAL N ETWORK In
+	this section, we present our regularized graph neural network
+	(RGNN), specifically, the biologically inspired adja­ cency
+	matrix, the dynamics of RGNN, and two regularizers, i.e.,
+	node-wise domain adversarial training (NodeDAT) and emotion-aware
+	distribution learning (EmotionDL). 4.1
+	Adjacency Matrix in RGNN The
+	adjacency matrix A ∈ R n×n in RGNN represents the topological
+	structure of EEG channels and is essential to graph
+	representation learning, where n denotes the number of
+	channels in EEG signals. Each entry A ij is learnable and indicates
+	the weight of connection between channels i and j.
+	Note that A contains self-loops. To reduce overfitting, we
+	model A as a symmetric matrix by using only n ( n +1) 2 number
+	of parameters instead of n 2 .
+	Salvador et al. [55] ob­ served
+	that the strength of connection between brain regions decays
+	as an inverse square function of physical distance. Hence,
+	we initialize the local inter-channel relations in our adjacency
+	matrix as follows δ A ij = min (1 , ) , (9) d 2 ij where d ij , i, j = 1 , 2 ,
+	..., n, denotes the physical distance between
+	channels i and j, which is computed from their 3D coordinates
+	obtained from the data sheet of the recording device,
+	and δ > 0 denotes a calibration constant. Achard and
+	Bullmore [56] observed that sparse fMRI networks, comprising
+	around 20% of all possible connections, typically maximize
+	the efficiency of the network topology. Therefore, we
+	choose δ = 5 such that around 20% of the entries in A are non-negligible. We empirically regard entries having values
+	larger than 0 . 1 as non-negligible connections. Bullmore
+	and Sporns [19] suggested that the brain orga­ nization
+	is shaped by an economic trade-off between mini­ mizing
+	wiring costs and network running costs. Minimizing wiring
+	costs encourages local inter-channel connections as modelled
+	in (9). However, minimizing network running costs
+	encourages certain global inter-channel connections for
+	high efficiency of information transfer across the net­ work
+	as a whole. To this end, we add several global con­nections to
+	our adjacency matrix to improve the network efficiency.
+	The global connections depend on specific elec­ trode
+	placement adopted in experiments. Fig. 2 depicts the global
+	connections in both SEED [7] and SEED-IV [24]. The selection
+	of global channels is supported by prior studies showing
+	that the asymmetry in neuronal activities between the
+	left and right hemispheres is informative in valence and arousal
+	predictions [5]. To leverage the differential asym­ metry
+	information, we initialize the global inter-channel relations
+	in A to [ − 1 , 0] as follows A ij = A ij − 1 , (10) 5 F ig.
+	1: The overall architecture of our RGNN model. FC denotes
+	fully-connected layer. CE denotes cross-entropy loss. KL denotes
+	Kullback-Leibler divergence [54]. GRL denotes gradient reversal
+	layer [22]. model
+	aims to minimize the following cross-entropy loss: Φ
+	= − ~ N log ( p (Y i | X i ,9 ))
+	+ α || A || 1 ,	(11) i =1 where
+	9 denotes the model parameters we want to optimize, and
+	α denotes the strength of L1 sparse regularization for our
+	adjacency matrix A . By
+	passing each feature matrix X i into
+	our RGNN, the output
+	probability of class Y i can
+	be computed as follows Z (12) j =
+	S L X j W , p (Y i | X i ,
+	9 )
+	= softmax Y i ( pool ( σ (Z j ))W O ) , Fig.
+	2: The 62-channel EEG placement used to collect data in SEED
+	and SEED-IV. Gray symmetric channels are connected globally
+	via red dashed lines. where ( i,
+	j ) denotes
+	the indices of global channel pairs: (FP1,
+	FP2), (AF3, AF4), (F5, F6), (FC5, FC6), (C5, C6), (CP5, CP6),
+	(P5, P6), (PO5, PO6) and (O1, O2). Note that we select
+	these indices because 1) they are connected to a large
+	number of nodes in their immediate neighborhood, which
+	maximizes the effects of EEG asymmetry; and 2) they empirically
+	perform slightly better than alternative sets of indices
+	(see Section 7.1). Our adjacency matrix A obtained in
+	(9) and (10) aims to represent the brain network which combines
+	both local anatomical connectivity and emotion-related global
+	functional connectivity. 4.2
+	Dynamics of RGNN Our
+	RGNN model extends the SGC model [20]. The archi­tecture of RGNN
+	is illustrated in Fig. 1. Given EEG features X ∈ R N x n x d and
+	labels Y ∈ Z N ,
+	where N denotes the number
+	of training samples, Y i ∈
+	{ 0 , 1 ,
+	..., C − 1 } denotes the
+	class index, and C denotes the number of classes. Our where S ∈ R n x n , W ∈ R d x d ~ and
+	L follow the definitions in
+	(5), σ ( x )
+	= max (0 ,
+	x ) denotes
+	a non-linear transforma­tion, W O ∈ R d ~ x C denotes
+	the output weight matrix, and pool ( · ) denotes
+	the sum pooling across all nodes on the graph.
+	We choose sum pooling because it demonstrated more
+	expressive power than mean pooling and max pooling [57]. Note that
+	we use the absolute values of A to
+	compute the
+	degree matrix D (see
+	(3)) because A has
+	negative entries, e.g.,
+	global connections. 4.2.1
+	Node-wise Domain Adversarial Training EEG
+	signals vary significantly across different subjects, which
+	hinders the generalizability of trained classifiers in subject-independent
+	classification settings. To improve the robustness
+	of our model across subjects, we extend the domain
+	adversarial training [22] by proposing a node-wise domain
+	adversarial training (NodeDAT) method to reduce the
+	discrepancies between source and target domains, i.e., training
+	and testing sets, respectively. Specifically, a domain classifier
+	is proposed to classify each node representation into
+	either source domain or target domain. During opti­ mization,
+	our model aims to confuse the domain classifier by
+	learning domain-invariant representations. Compared to
+	[22], which only regularizes the pooled representation in the last
+	layer, our NodeDAT method has finer-grained
